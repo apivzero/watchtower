@@ -36,5 +36,5 @@ dockers_v2:
       - linux/amd64
       - linux/386
       - linux/arm/v6
-      - linux/arm64/v8
+      - linux/arm64
     disable: "{{ .IsSnapshot }}"
