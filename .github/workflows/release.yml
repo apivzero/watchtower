@@ -5,7 +5,6 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
-      - '**/v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   lint:
@@ -68,7 +67,18 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.24.x
+      - name: Determine goreleaser args
+        id: goreleaser-args
+        run: |
+          if git describe --exact-match --tags HEAD >/dev/null 2>&1; then
+            echo "args=--verbose" >> "$GITHUB_OUTPUT"
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=--snapshot --skip=publish,docker --verbose" >> "$GITHUB_OUTPUT"
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Login to GHCR
+        if: steps.goreleaser-args.outputs.is_release == 'true'
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 #v3.7.0
         with:
           registry: ghcr.io
@@ -78,14 +88,16 @@ jobs:
         uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a #v6.4.0
         with:
           version: "~> v2"
-          args: --verbose
+          args: ${{ steps.goreleaser-args.outputs.args }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Enable experimental docker features
+        if: steps.goreleaser-args.outputs.is_release == 'true'
         run: |
           mkdir -p ~/.docker/ && \
           echo '{"experimental": "enabled"}' > ~/.docker/config.json
       - name: Create manifest for version
+        if: steps.goreleaser-args.outputs.is_release == 'true'
         run: |
           export DH_TAG=$(git tag --points-at HEAD | sed 's/^v*//')
           docker manifest create \
@@ -95,6 +107,7 @@ jobs:
             ghcr.io/apivzero/watchtower:armhf-$DH_TAG \
             ghcr.io/apivzero/watchtower:arm64v8-$DH_TAG
       - name: Annotate manifest for version
+        if: steps.goreleaser-args.outputs.is_release == 'true'
         run: |
           docker manifest annotate \
             ghcr.io/apivzero/watchtower:$(echo $TAG | sed 's/^v*//') \
@@ -115,6 +128,7 @@ jobs:
             --arch arm64 \
             --variant v8
       - name: Create manifest for latest
+        if: steps.goreleaser-args.outputs.is_release == 'true'
         run: |
           docker manifest create \
             ghcr.io/apivzero/watchtower:latest \
@@ -123,6 +137,7 @@ jobs:
             ghcr.io/apivzero/watchtower:armhf-latest \
             ghcr.io/apivzero/watchtower:arm64v8-latest
       - name: Annotate manifest for latest
+        if: steps.goreleaser-args.outputs.is_release == 'true'
         run: |
           docker manifest annotate \
             ghcr.io/apivzero/watchtower:latest \
@@ -143,12 +158,14 @@ jobs:
             --arch arm64 \
             --variant v8
       - name: Push manifests to GHCR
+        if: steps.goreleaser-args.outputs.is_release == 'true'
         run: |
           docker manifest push ghcr.io/apivzero/watchtower:$(echo $TAG | sed 's/^v*//') && \
             docker manifest push ghcr.io/apivzero/watchtower:latest
 
   renew-docs:
     name: Refresh pkg.go.dev
+    if: github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
     steps:
