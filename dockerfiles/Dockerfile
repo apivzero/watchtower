@@ -7,6 +7,8 @@ RUN apk add --no-cache \
 FROM scratch
 LABEL "com.centurylinklabs.watchtower"="true"
 
+ARG TARGETPLATFORM
+
 COPY --from=alpine \
     /etc/ssl/certs/ca-certificates.crt \
     /etc/ssl/certs/ca-certificates.crt
@@ -16,7 +18,7 @@ COPY --from=alpine \
 
 EXPOSE 8080
 
-COPY watchtower /
+COPY ${TARGETPLATFORM}/watchtower /
 
 HEALTHCHECK CMD [ "/watchtower", "--health-check"]
 
