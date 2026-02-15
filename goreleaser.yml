@@ -26,30 +26,26 @@ archives:
       - LICENSE.md
 
 dockers:
-  - build_flag_templates: ["--platform=linux/amd64"]
-    goos: linux
+  - goos: linux
     goarch: amd64
     dockerfile: dockerfiles/Dockerfile
     image_templates:
       - ghcr.io/apivzero/watchtower:amd64-{{ .Version }}
       - ghcr.io/apivzero/watchtower:amd64-latest
-  - build_flag_templates: ["--platform=linux/386"]
-    goos: linux
+  - goos: linux
     goarch: 386
     dockerfile: dockerfiles/Dockerfile
     image_templates:
       - ghcr.io/apivzero/watchtower:i386-{{ .Version }}
       - ghcr.io/apivzero/watchtower:i386-latest
-  - build_flag_templates: ["--platform=linux/arm/v6"]
-    goos: linux
+  - goos: linux
     goarch: arm
     goarm: "6"
     dockerfile: dockerfiles/Dockerfile
     image_templates:
       - ghcr.io/apivzero/watchtower:armhf-{{ .Version }}
       - ghcr.io/apivzero/watchtower:armhf-latest
-  - build_flag_templates: ["--platform=linux/arm64/v8"]
-    goos: linux
+  - goos: linux
     goarch: arm64
     dockerfile: dockerfiles/Dockerfile
     image_templates:
