@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM alpine:3.21 as alpine
+FROM --platform=$BUILDPLATFORM alpine:3.21 AS alpine
 
 RUN apk add --no-cache \
     ca-certificates \
