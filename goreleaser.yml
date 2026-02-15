@@ -31,8 +31,6 @@ dockers:
     goarch: amd64
     dockerfile: dockerfiles/Dockerfile
     image_templates:
-      - apivzero/watchtower:amd64-{{ .Version }}
-      - apivzero/watchtower:amd64-latest
       - ghcr.io/apivzero/watchtower:amd64-{{ .Version }}
       - ghcr.io/apivzero/watchtower:amd64-latest
   - build_flag_templates: ["--platform=linux/386"]
@@ -40,8 +38,6 @@ dockers:
     goarch: 386
     dockerfile: dockerfiles/Dockerfile
     image_templates:
-      - apivzero/watchtower:i386-{{ .Version }}
-      - apivzero/watchtower:i386-latest
       - ghcr.io/apivzero/watchtower:i386-{{ .Version }}
       - ghcr.io/apivzero/watchtower:i386-latest
   - build_flag_templates: ["--platform=linux/arm/v6"]
@@ -50,8 +46,6 @@ dockers:
     goarm: "6"
     dockerfile: dockerfiles/Dockerfile
     image_templates:
-      - apivzero/watchtower:armhf-{{ .Version }}
-      - apivzero/watchtower:armhf-latest
       - ghcr.io/apivzero/watchtower:armhf-{{ .Version }}
       - ghcr.io/apivzero/watchtower:armhf-latest
   - build_flag_templates: ["--platform=linux/arm64/v8"]
@@ -59,7 +53,5 @@ dockers:
     goarch: arm64
     dockerfile: dockerfiles/Dockerfile
     image_templates:
-      - apivzero/watchtower:arm64v8-{{ .Version }}
-      - apivzero/watchtower:arm64v8-latest
       - ghcr.io/apivzero/watchtower:arm64v8-{{ .Version }}
       - ghcr.io/apivzero/watchtower:arm64v8-latest

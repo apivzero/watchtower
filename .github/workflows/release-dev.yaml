@@ -38,22 +38,17 @@ jobs:
       - build
       - test
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Publish to Docker Hub
-        uses: jerray/publish-docker-action@87d84711629b0dc9f6bb127b568413cc92a2088e #master@2022-10-14
+      - name: Login to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 #v3.7.0
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          file: dockerfiles/Dockerfile.self-contained
-          repository: apivzero/watchtower
-          tags: latest-dev
-      - name: Publish to GHCR
-        uses: jerray/publish-docker-action@87d84711629b0dc9f6bb127b568413cc92a2088e #master@2022-10-14
-        with:
-          username: ${{ secrets.BOT_USERNAME }}
-          password: ${{ secrets.BOT_GHCR_PAT }}
-          file: dockerfiles/Dockerfile.self-contained
           registry: ghcr.io
-          repository: apivzero/watchtower
-          tags: latest-dev
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        run: |
+          docker build -f dockerfiles/Dockerfile.self-contained -t ghcr.io/apivzero/watchtower:latest-dev .
+          docker push ghcr.io/apivzero/watchtower:latest-dev

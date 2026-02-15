@@ -29,8 +29,6 @@ jobs:
     name: Test
     strategy:
       matrix:
-        go-version:
-          - 1.22.x
         platform:
           - ubuntu-latest
           # - macos-latest
@@ -55,6 +53,9 @@ jobs:
     needs:
       - test
       - lint
+    permissions:
+      contents: write
+      packages: write
     env:
       CGO_ENABLED: 0
       TAG: ${{ github.ref_name }}
@@ -67,17 +68,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.24.x
-      - name: Login to Docker Hub
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 #v3.7.0
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Login to GHCR
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 #v3.7.0
         with:
-          username: ${{ secrets.BOT_USERNAME }}
-          password: ${{ secrets.BOT_GHCR_PAT }}
           registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build
         uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a #v6.4.0
         with:
@@ -93,12 +89,6 @@ jobs:
         run: |
           export DH_TAG=$(git tag --points-at HEAD | sed 's/^v*//')
           docker manifest create \
-            apivzero/watchtower:$DH_TAG \
-            apivzero/watchtower:amd64-$DH_TAG \
-            apivzero/watchtower:i386-$DH_TAG \
-            apivzero/watchtower:armhf-$DH_TAG \
-            apivzero/watchtower:arm64v8-$DH_TAG
-          docker manifest create \
             ghcr.io/apivzero/watchtower:$DH_TAG \
             ghcr.io/apivzero/watchtower:amd64-$DH_TAG \
             ghcr.io/apivzero/watchtower:i386-$DH_TAG \
@@ -106,36 +96,26 @@ jobs:
             ghcr.io/apivzero/watchtower:arm64v8-$DH_TAG
       - name: Annotate manifest for version
         run: |
-          for REPO in '' ghcr.io/ ; do
-
           docker manifest annotate \
-            ${REPO}apivzero/watchtower:$(echo $TAG | sed 's/^v*//') \
-            ${REPO}apivzero/watchtower:i386-$(echo $TAG | sed 's/^v*//') \
+            ghcr.io/apivzero/watchtower:$(echo $TAG | sed 's/^v*//') \
+            ghcr.io/apivzero/watchtower:i386-$(echo $TAG | sed 's/^v*//') \
             --os linux \
             --arch 386
 
           docker manifest annotate \
-            ${REPO}apivzero/watchtower:$(echo $TAG | sed 's/^v*//') \
-            ${REPO}apivzero/watchtower:armhf-$(echo $TAG | sed 's/^v*//') \
+            ghcr.io/apivzero/watchtower:$(echo $TAG | sed 's/^v*//') \
+            ghcr.io/apivzero/watchtower:armhf-$(echo $TAG | sed 's/^v*//') \
             --os linux \
             --arch arm
 
           docker manifest annotate \
-            ${REPO}apivzero/watchtower:$(echo $TAG | sed 's/^v*//') \
-            ${REPO}apivzero/watchtower:arm64v8-$(echo $TAG | sed 's/^v*//') \
+            ghcr.io/apivzero/watchtower:$(echo $TAG | sed 's/^v*//') \
+            ghcr.io/apivzero/watchtower:arm64v8-$(echo $TAG | sed 's/^v*//') \
             --os linux \
             --arch arm64 \
             --variant v8
-
-            done
       - name: Create manifest for latest
         run: |
-          docker manifest create \
-            apivzero/watchtower:latest \
-            apivzero/watchtower:amd64-latest \
-            apivzero/watchtower:i386-latest \
-            apivzero/watchtower:armhf-latest \
-            apivzero/watchtower:arm64v8-latest
           docker manifest create \
             ghcr.io/apivzero/watchtower:latest \
             ghcr.io/apivzero/watchtower:amd64-latest \
@@ -144,43 +124,27 @@ jobs:
             ghcr.io/apivzero/watchtower:arm64v8-latest
       - name: Annotate manifest for latest
         run: |
-          for REPO in '' ghcr.io/ ; do
-
           docker manifest annotate \
-            ${REPO}apivzero/watchtower:latest \
-            ${REPO}apivzero/watchtower:i386-latest \
+            ghcr.io/apivzero/watchtower:latest \
+            ghcr.io/apivzero/watchtower:i386-latest \
             --os linux \
             --arch 386
 
           docker manifest annotate \
-            ${REPO}apivzero/watchtower:latest \
-            ${REPO}apivzero/watchtower:armhf-latest \
+            ghcr.io/apivzero/watchtower:latest \
+            ghcr.io/apivzero/watchtower:armhf-latest \
             --os linux \
             --arch arm
 
           docker manifest annotate \
-            ${REPO}apivzero/watchtower:latest \
-            ${REPO}apivzero/watchtower:arm64v8-latest \
+            ghcr.io/apivzero/watchtower:latest \
+            ghcr.io/apivzero/watchtower:arm64v8-latest \
             --os linux \
             --arch arm64 \
             --variant v8
-
-          done
-      - name: Push manifests to Dockerhub
-        env:
-          DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Push manifests to GHCR
         run: |
-          docker login -u $DOCKER_USER -p $DOCKER_TOKEN && \
-            docker manifest push apivzero/watchtower:$(echo $TAG | sed 's/^v*//') && \
-            docker manifest push apivzero/watchtower:latest
-      - name: Push manifests to GitHub Container Registry
-        env:
-          DOCKER_USER: ${{ secrets.BOT_USERNAME }}
-          DOCKER_TOKEN: ${{ secrets.BOT_GHCR_PAT }}
-        run: |
-          docker login -u $DOCKER_USER -p $DOCKER_TOKEN ghcr.io && \
-            docker manifest push ghcr.io/apivzero/watchtower:$(echo $TAG | sed 's/^v*//') && \
+          docker manifest push ghcr.io/apivzero/watchtower:$(echo $TAG | sed 's/^v*//') && \
             docker manifest push ghcr.io/apivzero/watchtower:latest
 
   renew-docs:
