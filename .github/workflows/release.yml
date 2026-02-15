@@ -19,10 +19,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22.x
-      - uses: dominikh/staticcheck-action@288b4e28bae83c59f35f73651aeb5cab746a06fc #v1.4.0
+          go-version: 1.24.x
+      - uses: dominikh/staticcheck-action@024238d2898c874f26d723e7d0ff4308c35589a2 #v1.4.0
         with:
-          version: "2024.1.1"
+          version: "2025.1.1"
           install-go: "false"
 
   test:
@@ -44,7 +44,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22.x
+          go-version: 1.24.x
       - name: Run tests
         run: |
           go test ./... -coverprofile coverage.out
@@ -66,7 +66,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22.x
+          go-version: 1.24.x
       - name: Login to Docker Hub
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 #v3.7.0
         with:

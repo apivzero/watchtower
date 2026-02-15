@@ -139,7 +139,7 @@ container := MockContainer(WithContainerState(types.ContainerState{Running: true
 
 - GitHub Actions workflows in `.github/workflows/`
 - All actions pinned to commit hashes (not floating tags)
-- Go version: 1.22.x across all workflows
+- Go version: 1.24.x across all workflows
 - Staticcheck for linting
 - goreleaser v2 for builds and releases
 
