@@ -13,6 +13,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestDockerAPIMinVersion(t *testing.T) {
+	assert.Equal(t, "1.44", DockerAPIMinVersion,
+		"DockerAPIMinVersion must be 1.44 for Docker 28+ compatibility")
+}
+
+func TestSetDefaults_SetsAPIVersion(t *testing.T) {
+	SetDefaults()
+	assert.Equal(t, DockerAPIMinVersion, viper.GetString("DOCKER_API_VERSION"))
+}
+
 func TestEnvConfig_Defaults(t *testing.T) {
 	// Unset testing environments own variables, since those are not what is under test
 	_ = os.Unsetenv("DOCKER_TLS_VERIFY")
@@ -27,8 +37,7 @@ func TestEnvConfig_Defaults(t *testing.T) {
 
 	assert.Equal(t, "unix:///var/run/docker.sock", os.Getenv("DOCKER_HOST"))
 	assert.Equal(t, "", os.Getenv("DOCKER_TLS_VERIFY"))
-	// Re-enable this test when we've moved to github actions.
-	// assert.Equal(t, DockerAPIMinVersion, os.Getenv("DOCKER_API_VERSION"))
+	assert.Equal(t, DockerAPIMinVersion, os.Getenv("DOCKER_API_VERSION"))
 }
 
 func TestEnvConfig_Custom(t *testing.T) {
