@@ -70,7 +70,6 @@ This triggers the release workflow, which will:
 3. Build and push multi-arch Docker images to GHCR
 4. Create a multi-arch manifest (`ghcr.io/apivzero/watchtower:2.0.0` and `:latest`)
 5. Create a GitHub Release with downloadable archives
-6. Notify pkg.go.dev of the new module version
 
 There's no fixed release cadence. Tag a release whenever there are meaningful changes worth shipping.
 
