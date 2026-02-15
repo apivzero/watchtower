@@ -10,7 +10,7 @@
   [![Go Report Card](https://goreportcard.com/badge/github.com/apivzero/watchtower)](https://goreportcard.com/report/github.com/apivzero/watchtower)
   [![latest version](https://img.shields.io/github/tag/apivzero/watchtower.svg)](https://github.com/apivzero/watchtower/releases)
   [![Apache-2.0 License](https://img.shields.io/github/license/apivzero/watchtower.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-  [![Pulls from DockerHub](https://img.shields.io/docker/pulls/apivzero/watchtower.svg)](https://hub.docker.com/r/apivzero/watchtower)
+  [![GHCR](https://img.shields.io/badge/GHCR-apivzero%2Fwatchtower-blue)](https://github.com/apivzero/watchtower/pkgs/container/watchtower)
 
 </div>
 
@@ -39,11 +39,11 @@ Watchtower updates the running version of your containerized app when a new imag
 $ docker run --detach \
     --name watchtower \
     --volume /var/run/docker.sock:/var/run/docker.sock \
-    apivzero/watchtower
+    ghcr.io/apivzero/watchtower
 ```
 
 > **Note:** Watchtower is intended for homelabs, media centers, local dev environments, and similar. It is not recommended for commercial or production use. For that, look into Kubernetes or lighter-weight alternatives like [MicroK8s](https://microk8s.io/) and [k3s](https://k3s.io/).
 
 ## Documentation
 
-For general usage documentation, refer to the [upstream watchtower docs](https://containrrr.dev/watchtower). Note that image references should use `apivzero/watchtower` instead of `containrrr/watchtower`.
+For general usage documentation, refer to the [upstream watchtower docs](https://containrrr.dev/watchtower). Note that image references should use `ghcr.io/apivzero/watchtower` instead of `containrrr/watchtower`.

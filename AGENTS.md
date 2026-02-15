@@ -142,6 +142,8 @@ container := MockContainer(WithContainerState(types.ContainerState{Running: true
 - Go version: 1.24.x across all workflows
 - Staticcheck for linting
 - goreleaser v2 for builds and releases
+- Container images published to GHCR only (`ghcr.io/apivzero/watchtower`), no Docker Hub
+- All workflows authenticate to GHCR via `GITHUB_TOKEN` (no custom secrets needed)
 
 ## Things to Watch Out For
 
