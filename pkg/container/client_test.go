@@ -4,13 +4,14 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"time"
 
-	"github.com/containrrr/watchtower/internal/util"
-	"github.com/containrrr/watchtower/pkg/container/mocks"
-	"github.com/containrrr/watchtower/pkg/filters"
-	t "github.com/containrrr/watchtower/pkg/types"
+	"github.com/apivzero/watchtower/internal/util"
+	"github.com/apivzero/watchtower/pkg/container/mocks"
+	"github.com/apivzero/watchtower/pkg/filters"
+	t "github.com/apivzero/watchtower/pkg/types"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/backend"
+	"github.com/docker/docker/api/types/container"
 	cli "github.com/docker/docker/client"
 	"github.com/docker/docker/errdefs"
 	"github.com/onsi/gomega/gbytes"
@@ -270,7 +271,7 @@ var _ = Describe("the client", func() {
 					// API.ContainerExecCreate
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", HaveSuffix("containers/%v/exec", containerID)),
-						ghttp.VerifyJSONRepresenting(types.ExecConfig{
+						ghttp.VerifyJSONRepresenting(container.ExecOptions{
 							User:   user,
 							Detach: false,
 							Tty:    true,
@@ -285,7 +286,7 @@ var _ = Describe("the client", func() {
 					// API.ContainerExecStart
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", HaveSuffix("exec/%v/start", execID)),
-						ghttp.VerifyJSONRepresenting(types.ExecStartCheck{
+						ghttp.VerifyJSONRepresenting(container.ExecStartOptions{
 							Detach: false,
 							Tty:    true,
 						}),
@@ -333,6 +334,16 @@ var _ = Describe("the client", func() {
 				Expect(container.ContainerInfo().NetworkSettings.Networks[`test`].Aliases).To(Equal(aliases))
 				Expect(client.GetNetworkConfig(container).EndpointsConfig[`test`].Aliases).To(Equal([]string{"One", "Two", "Four"}))
 			})
+		})
+	})
+	Describe(`NewClient`, func() {
+		It(`should create a valid client with API version negotiation`, func() {
+			client := NewClient(ClientOptions{})
+			Expect(client).NotTo(BeNil())
+
+			dc, ok := client.(dockerClient)
+			Expect(ok).To(BeTrue(), "NewClient should return a dockerClient")
+			Expect(dc.api).NotTo(BeNil())
 		})
 	})
 })
