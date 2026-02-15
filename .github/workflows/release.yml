@@ -57,7 +57,6 @@ jobs:
       packages: write
     env:
       CGO_ENABLED: 0
-      TAG: ${{ github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -91,77 +90,6 @@ jobs:
           args: ${{ steps.goreleaser-args.outputs.args }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Enable experimental docker features
-        if: steps.goreleaser-args.outputs.is_release == 'true'
-        run: |
-          mkdir -p ~/.docker/ && \
-          echo '{"experimental": "enabled"}' > ~/.docker/config.json
-      - name: Create manifest for version
-        if: steps.goreleaser-args.outputs.is_release == 'true'
-        run: |
-          export DH_TAG=$(git tag --points-at HEAD | sed 's/^v*//')
-          docker manifest create \
-            ghcr.io/apivzero/watchtower:$DH_TAG \
-            ghcr.io/apivzero/watchtower:amd64-$DH_TAG \
-            ghcr.io/apivzero/watchtower:i386-$DH_TAG \
-            ghcr.io/apivzero/watchtower:armhf-$DH_TAG \
-            ghcr.io/apivzero/watchtower:arm64v8-$DH_TAG
-      - name: Annotate manifest for version
-        if: steps.goreleaser-args.outputs.is_release == 'true'
-        run: |
-          docker manifest annotate \
-            ghcr.io/apivzero/watchtower:$(echo $TAG | sed 's/^v*//') \
-            ghcr.io/apivzero/watchtower:i386-$(echo $TAG | sed 's/^v*//') \
-            --os linux \
-            --arch 386
-
-          docker manifest annotate \
-            ghcr.io/apivzero/watchtower:$(echo $TAG | sed 's/^v*//') \
-            ghcr.io/apivzero/watchtower:armhf-$(echo $TAG | sed 's/^v*//') \
-            --os linux \
-            --arch arm
-
-          docker manifest annotate \
-            ghcr.io/apivzero/watchtower:$(echo $TAG | sed 's/^v*//') \
-            ghcr.io/apivzero/watchtower:arm64v8-$(echo $TAG | sed 's/^v*//') \
-            --os linux \
-            --arch arm64 \
-            --variant v8
-      - name: Create manifest for latest
-        if: steps.goreleaser-args.outputs.is_release == 'true'
-        run: |
-          docker manifest create \
-            ghcr.io/apivzero/watchtower:latest \
-            ghcr.io/apivzero/watchtower:amd64-latest \
-            ghcr.io/apivzero/watchtower:i386-latest \
-            ghcr.io/apivzero/watchtower:armhf-latest \
-            ghcr.io/apivzero/watchtower:arm64v8-latest
-      - name: Annotate manifest for latest
-        if: steps.goreleaser-args.outputs.is_release == 'true'
-        run: |
-          docker manifest annotate \
-            ghcr.io/apivzero/watchtower:latest \
-            ghcr.io/apivzero/watchtower:i386-latest \
-            --os linux \
-            --arch 386
-
-          docker manifest annotate \
-            ghcr.io/apivzero/watchtower:latest \
-            ghcr.io/apivzero/watchtower:armhf-latest \
-            --os linux \
-            --arch arm
-
-          docker manifest annotate \
-            ghcr.io/apivzero/watchtower:latest \
-            ghcr.io/apivzero/watchtower:arm64v8-latest \
-            --os linux \
-            --arch arm64 \
-            --variant v8
-      - name: Push manifests to GHCR
-        if: steps.goreleaser-args.outputs.is_release == 'true'
-        run: |
-          docker manifest push ghcr.io/apivzero/watchtower:$(echo $TAG | sed 's/^v*//') && \
-            docker manifest push ghcr.io/apivzero/watchtower:latest
 
   renew-docs:
     name: Refresh pkg.go.dev

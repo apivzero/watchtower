@@ -55,3 +55,17 @@ dockers:
     image_templates:
       - ghcr.io/apivzero/watchtower:arm64v8-{{ .Version }}
       - ghcr.io/apivzero/watchtower:arm64v8-latest
+
+docker_manifests:
+  - name_template: ghcr.io/apivzero/watchtower:{{ .Version }}
+    image_templates:
+      - ghcr.io/apivzero/watchtower:amd64-{{ .Version }}
+      - ghcr.io/apivzero/watchtower:i386-{{ .Version }}
+      - ghcr.io/apivzero/watchtower:armhf-{{ .Version }}
+      - ghcr.io/apivzero/watchtower:arm64v8-{{ .Version }}
+  - name_template: ghcr.io/apivzero/watchtower:latest
+    image_templates:
+      - ghcr.io/apivzero/watchtower:amd64-latest
+      - ghcr.io/apivzero/watchtower:i386-latest
+      - ghcr.io/apivzero/watchtower:armhf-latest
+      - ghcr.io/apivzero/watchtower:arm64v8-latest
