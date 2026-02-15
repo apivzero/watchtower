@@ -2,6 +2,7 @@ package container
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -13,7 +14,6 @@ import (
 	"github.com/docker/docker/api/types/network"
 	sdkClient "github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
 
 	"github.com/apivzero/watchtower/pkg/registry"
 	"github.com/apivzero/watchtower/pkg/registry/digest"
