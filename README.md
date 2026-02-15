@@ -33,7 +33,7 @@ This project was originally built by the [containrrr](https://github.com/contain
 
 ## Quick Start
 
-Watchtower updates the running version of your containerized app when a new image is pushed to Docker Hub or your own image registry. It pulls down the new image, gracefully shuts down the existing container, and restarts it with the same options that were used when it was deployed initially.
+Watchtower updates the running version of your containerized app when a new image is pushed to your image registry. It pulls down the new image, gracefully shuts down the existing container, and restarts it with the same options that were used when it was deployed initially.
 
 ```
 $ docker run --detach \
