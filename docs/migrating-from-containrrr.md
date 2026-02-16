@@ -12,11 +12,13 @@ If you started watchtower with `docker run`:
     docker ps --filter "name=watchtower" --no-trunc
     ```
 
-2. Inspect it and note your configuration (restart policy, environment variables, volume mounts, port bindings, network mode):
+2. Inspect it and save your configuration — restart policy, environment variables, volume mounts, port bindings, network mode, and any extra flags:
 
     ```bash
     docker inspect watchtower
     ```
+
+    Look at `HostConfig.RestartPolicy`, `HostConfig.Binds`, `Config.Env`, `HostConfig.PortBindings`, and `HostConfig.NetworkMode` in the output. You'll need these to recreate the container with the same options.
 
 3. Stop and remove the old container:
 
@@ -35,7 +37,7 @@ If you started watchtower with `docker run`:
       ghcr.io/apivzero/watchtower
     ```
 
-    Add back any environment variables (`-e`), volume mounts (`-v`), port bindings (`-p`), or extra flags you had before.
+    Add back any environment variables (`-e`), volume mounts (`-v`), port bindings (`-p`), or extra flags from the inspect output in step 2.
 
 5. Verify:
 
@@ -44,10 +46,11 @@ If you started watchtower with `docker run`:
     docker logs watchtower --tail 20
     ```
 
-6. Clean up the old image:
+6. Clean up old images and any leftover networks:
 
     ```bash
     docker image rm containrrr/watchtower
+    docker network prune -f
     ```
 
 ## docker-compose
@@ -62,12 +65,18 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
-Then:
+Then pull the new image explicitly and recreate:
 
 ```bash
 docker compose pull watchtower
 docker compose up -d watchtower
+```
+
+Running `pull` first ensures you get the new image from GHCR rather than reusing a locally cached layer. After verifying everything works, clean up:
+
+```bash
 docker image prune -f
+docker network prune -f
 ```
 
 ## What changed
