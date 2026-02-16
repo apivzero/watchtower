@@ -65,14 +65,14 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
-Then pull the new image explicitly and recreate:
+Then:
 
 ```bash
 docker compose pull watchtower
 docker compose up -d watchtower
 ```
 
-Running `pull` first ensures you get the new image from GHCR rather than reusing a locally cached layer. After verifying everything works, clean up:
+After verifying everything works, clean up:
 
 ```bash
 docker image prune -f
