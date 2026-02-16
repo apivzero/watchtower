@@ -22,6 +22,10 @@
   </a>
 </p>
 
+!!! tip "Coming from containrrr/watchtower?"
+    This is a maintained fork of the archived upstream project.
+    See the [migration guide](migrating-from-containrrr.md) — it's a drop-in image swap.
+
 ## Quick Start
 
 With watchtower you can update the running version of your containerized app simply by pushing a new image to your
@@ -41,10 +45,13 @@ the following command:
 === "docker-compose.yml"
 
     ```yaml
-    version: "3"
     services:
       watchtower:
         image: ghcr.io/apivzero/watchtower
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
     ```
+
+By default, watchtower checks for new images every 24 hours. See [Arguments](arguments.md) for how to customize the interval, set a cron schedule, and more.
+
+Ready to go deeper? Start with the [Usage overview](usage-overview.md), or jump to [Container selection](container-selection.md) to control which containers get updated.

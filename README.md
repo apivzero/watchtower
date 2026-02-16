@@ -20,6 +20,8 @@ This is a maintained fork of [containrrr/watchtower](https://github.com/containr
 
 I'm not offering heavy support, but I do welcome PRs.
 
+**Coming from containrrr/watchtower?** See the [migration guide](docs/migrating-from-containrrr.md) — it's a drop-in image swap.
+
 ### Key changes from upstream
 
 - Docker SDK upgraded to v27.x with API version negotiation, fixing compatibility with Docker 28+ (which requires API v1.44+)
@@ -33,7 +35,7 @@ This project was originally built by the [containrrr](https://github.com/contain
 
 ## Quick Start
 
-Watchtower updates the running version of your containerized app when a new image is pushed to your image registry. It pulls down the new image, gracefully shuts down the existing container, and restarts it with the same options that were used when it was deployed initially.
+Watchtower monitors your running containers and automatically restarts them when a newer image is available. By default it checks every 24 hours.
 
 ```
 $ docker run --detach \
@@ -42,7 +44,31 @@ $ docker run --detach \
     ghcr.io/apivzero/watchtower
 ```
 
+Or with docker-compose:
+
+```yaml
+services:
+  watchtower:
+    image: ghcr.io/apivzero/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+```
+
 > **Note:** Watchtower is intended for homelabs, media centers, local dev environments, and similar. It is not recommended for commercial or production use. For that, look into Kubernetes or lighter-weight alternatives like [MicroK8s](https://microk8s.io/) and [k3s](https://k3s.io/).
+
+## Documentation
+
+Full documentation is in the [`docs/`](docs/) directory:
+
+- [Usage overview](docs/usage-overview.md) — getting started, private registries, credentials
+- [Arguments](docs/arguments.md) — all CLI flags and environment variables
+- [Container selection](docs/container-selection.md) — filtering, labels, monitoring-only mode
+- [Notifications](docs/notifications.md) — Slack, email, Shoutrrr, etc.
+- [Lifecycle hooks](docs/lifecycle-hooks.md) — pre/post-update commands
+- [HTTP API](docs/http-api-mode.md) — trigger updates on demand
+- [Migrating from containrrr](docs/migrating-from-containrrr.md) — switching from the archived upstream
+
+The [upstream watchtower docs](https://containrrr.dev/watchtower) are also still available for reference, though image references there use the old `containrrr/watchtower` name.
 
 ## Releases
 
@@ -76,7 +102,3 @@ There's no fixed release cadence. Tag a release whenever there are meaningful ch
 ### Manual workflow dispatch
 
 The release workflow also supports manual triggering via the GitHub Actions UI ("Run workflow" button). When run on an untagged commit, it performs a snapshot build (lint, test, compile) without publishing anything. This is useful for verifying the release pipeline works end-to-end.
-
-## Documentation
-
-For general usage documentation, refer to the [upstream watchtower docs](https://containrrr.dev/watchtower). Note that image references should use `ghcr.io/apivzero/watchtower` instead of `containrrr/watchtower`.

@@ -36,6 +36,7 @@ markdown_extensions:
         alternate_style: true
 nav:
    - 'Home': 'index.md'
+   - 'Migrating from containrrr': 'migrating-from-containrrr.md'
    - 'Introduction': 'introduction.md'
    - 'Usage overview': 'usage-overview.md'
    - 'Arguments': 'arguments.md'
