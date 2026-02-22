@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,7 +20,7 @@ import (
 const ChallengeHeader = "WWW-Authenticate"
 
 // GetToken fetches a token for the registry hosting the provided image
-func GetToken(container types.Container, registryAuth string) (string, error) {
+func GetToken(container types.Container, registryAuth string, noTLSVerify bool) (string, error) {
 	normalizedRef, err := ref.ParseNormalizedNamed(container.ImageName())
 	if err != nil {
 		return "", err
@@ -33,7 +34,7 @@ func GetToken(container types.Container, registryAuth string) (string, error) {
 		return "", err
 	}
 
-	client := &http.Client{}
+	client := newHTTPClient(noTLSVerify)
 	var res *http.Response
 	if res, err = client.Do(req); err != nil {
 		return "", err
@@ -55,7 +56,7 @@ func GetToken(container types.Container, registryAuth string) (string, error) {
 		return fmt.Sprintf("Basic %s", registryAuth), nil
 	}
 	if strings.HasPrefix(challenge, "bearer") {
-		return GetBearerHeader(challenge, normalizedRef, registryAuth)
+		return GetBearerHeader(challenge, normalizedRef, registryAuth, noTLSVerify)
 	}
 
 	return "", errors.New("unsupported challenge type from registry")
@@ -73,8 +74,8 @@ func GetChallengeRequest(URL url.URL) (*http.Request, error) {
 }
 
 // GetBearerHeader tries to fetch a bearer token from the registry based on the challenge instructions
-func GetBearerHeader(challenge string, imageRef ref.Named, registryAuth string) (string, error) {
-	client := http.Client{}
+func GetBearerHeader(challenge string, imageRef ref.Named, registryAuth string, noTLSVerify bool) (string, error) {
+	client := newHTTPClient(noTLSVerify)
 	authURL, err := GetAuthURL(challenge, imageRef)
 
 	if err != nil {
@@ -146,6 +147,19 @@ func GetAuthURL(challenge string, imageRef ref.Named) (*url.URL, error) {
 
 	authURL.RawQuery = q.Encode()
 	return authURL, nil
+}
+
+// newHTTPClient returns an HTTP client with TLS verification configured
+// according to noTLSVerify.
+func newHTTPClient(noTLSVerify bool) *http.Client {
+	if !noTLSVerify {
+		return &http.Client{}
+	}
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
+		},
+	}
 }
 
 // GetChallengeURL returns the URL to check auth requirements

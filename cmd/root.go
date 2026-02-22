@@ -112,6 +112,7 @@ func PreRun(cmd *cobra.Command, _ []string) {
 	}
 
 	noPull, _ = f.GetBool("no-pull")
+	noTLSVerify, _ := f.GetBool("no-tls-verify")
 	includeStopped, _ := f.GetBool("include-stopped")
 	includeRestarting, _ := f.GetBool("include-restarting")
 	reviveStopped, _ := f.GetBool("revive-stopped")
@@ -128,6 +129,7 @@ func PreRun(cmd *cobra.Command, _ []string) {
 		RemoveVolumes:     removeVolumes,
 		IncludeRestarting: includeRestarting,
 		WarnOnHeadFailed:  container.WarningStrategy(warnOnHeadPullFailed),
+		NoTLSVerify:       noTLSVerify,
 	})
 
 	notifier = notifications.NewNotifier(cmd)

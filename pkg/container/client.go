@@ -3,6 +3,9 @@ package container
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -65,6 +68,7 @@ type ClientOptions struct {
 	ReviveStopped     bool
 	IncludeRestarting bool
 	WarnOnHeadFailed  WarningStrategy
+	NoTLSVerify       bool
 }
 
 // WarningStrategy is a value determining when to show warnings
@@ -377,13 +381,16 @@ func (client dockerClient) PullImage(ctx context.Context, container t.Container)
 
 	log.WithFields(fields).Debugf("Checking if pull is needed")
 
-	if match, err := digest.CompareDigest(container, opts.RegistryAuth); err != nil {
+	if match, err := digest.CompareDigest(container, opts.RegistryAuth, client.NoTLSVerify); err != nil {
 		headLevel := log.DebugLevel
 		if client.WarnOnHeadPullFailed(container) {
 			headLevel = log.WarnLevel
 		}
 		log.WithFields(fields).Logf(headLevel, "Could not do a head request for %q, falling back to regular pull.", imageName)
 		log.WithFields(fields).Log(headLevel, "Reason: ", err)
+		if !client.NoTLSVerify && isCertError(err) {
+			log.WithFields(fields).Warnf("If %q uses a self-signed certificate, set --no-tls-verify (env: WATCHTOWER_NO_TLS_VERIFY=true) to disable certificate verification.", imageName)
+		}
 	} else if match {
 		log.Debug("No pull needed. Skipping image.")
 		return nil
@@ -558,4 +565,16 @@ func (client dockerClient) waitForStopOrTimeout(c t.Container, waitTime time.Dur
 		}
 		time.Sleep(1 * time.Second)
 	}
+}
+
+// isCertError reports whether err is a TLS certificate verification failure.
+func isCertError(err error) bool {
+	var tlsCertErr *tls.CertificateVerificationError
+	var unknownAuth x509.UnknownAuthorityError
+	var hostnameErr x509.HostnameError
+	var certInvalid x509.CertificateInvalidError
+	return errors.As(err, &tlsCertErr) ||
+		errors.As(err, &unknownAuth) ||
+		errors.As(err, &hostnameErr) ||
+		errors.As(err, &certInvalid)
 }

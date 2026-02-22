@@ -65,7 +65,7 @@ var _ = Describe("Digests", func() {
 		It("should return true if digests match",
 			SkipIfCredentialsEmpty(GHCRCredentials, func() {
 				creds := fmt.Sprintf("%s:%s", GHCRCredentials.Username, GHCRCredentials.Password)
-				matches, err := digest.CompareDigest(mockContainer, creds)
+				matches, err := digest.CompareDigest(mockContainer, creds, false)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(matches).To(Equal(true))
 			}),
@@ -78,7 +78,7 @@ var _ = Describe("Digests", func() {
 
 		})
 		It("should return an error when container contains no image info", func() {
-			matches, err := digest.CompareDigest(mockContainerNoImage, `user:pass`)
+			matches, err := digest.CompareDigest(mockContainerNoImage, `user:pass`, false)
 			Expect(err).To(HaveOccurred())
 			Expect(matches).To(Equal(false))
 		})
@@ -116,7 +116,7 @@ var _ = Describe("Digests", func() {
 					}),
 				),
 			)
-			dig, err := digest.GetDigest(server.URL(), "token")
+			dig, err := digest.GetDigest(server.URL(), "token", false)
 			Expect(server.ReceivedRequests()).Should(HaveLen(1))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dig).To(Equal(mockDigest))
