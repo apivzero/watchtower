@@ -425,6 +425,24 @@ Environment Variable: DOCKER_TLS_VERIFY
              Default: false
 ```
 
+## Disable registry TLS verification
+
+Disable TLS certificate verification when connecting to registries for digest checks. By default,
+watchtower verifies the registry's certificate chain and host name. Use this option only with
+private or self-hosted registries that use self-signed or internally-signed certificates.
+
+!!! warning
+    Disabling TLS verification exposes registry credentials to potential interception. Only use
+    this option when connecting to a registry whose certificate cannot be added to the system
+    trust store.
+
+```text
+            Argument: --no-tls-verify
+Environment Variable: WATCHTOWER_NO_TLS_VERIFY
+                Type: Boolean
+             Default: false
+```
+
 ## HEAD failure warnings
 
 When to warn about HEAD pull requests failing. Auto means that it will warn when the registry is known to handle the

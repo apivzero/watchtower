@@ -57,6 +57,12 @@ func RegisterSystemFlags(rootCmd *cobra.Command) {
 		"Do not pull any new images")
 
 	flags.BoolP(
+		"no-tls-verify",
+		"",
+		envBool("WATCHTOWER_NO_TLS_VERIFY"),
+		"Disable TLS certificate verification when connecting to registries. Use only with private registries using self-signed certificates.")
+
+	flags.BoolP(
 		"no-restart",
 		"",
 		envBool("WATCHTOWER_NO_RESTART"),

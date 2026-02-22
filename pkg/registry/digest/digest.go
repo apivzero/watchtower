@@ -22,7 +22,7 @@ import (
 const ContentDigestHeader = "Docker-Content-Digest"
 
 // CompareDigest ...
-func CompareDigest(container types.Container, registryAuth string) (bool, error) {
+func CompareDigest(container types.Container, registryAuth string, noTLSVerify bool) (bool, error) {
 	if !container.HasImageInfo() {
 		return false, errors.New("container image info missing")
 	}
@@ -30,7 +30,7 @@ func CompareDigest(container types.Container, registryAuth string) (bool, error)
 	var digest string
 
 	registryAuth = TransformAuth(registryAuth)
-	token, err := auth.GetToken(container, registryAuth)
+	token, err := auth.GetToken(container, registryAuth, noTLSVerify)
 	if err != nil {
 		return false, err
 	}
@@ -40,7 +40,7 @@ func CompareDigest(container types.Container, registryAuth string) (bool, error)
 		return false, err
 	}
 
-	if digest, err = GetDigest(digestURL, token); err != nil {
+	if digest, err = GetDigest(digestURL, token, noTLSVerify); err != nil {
 		return false, err
 	}
 
@@ -75,7 +75,7 @@ func TransformAuth(registryAuth string) string {
 }
 
 // GetDigest from registry using a HEAD request to prevent rate limiting
-func GetDigest(url string, token string) (string, error) {
+func GetDigest(url string, token string, noTLSVerify bool) (string, error) {
 	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -87,7 +87,7 @@ func GetDigest(url string, token string) (string, error) {
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: noTLSVerify}, //nolint:gosec
 	}
 	client := &http.Client{Transport: tr}
 
