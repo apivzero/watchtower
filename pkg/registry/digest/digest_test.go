@@ -122,4 +122,27 @@ var _ = Describe("Digests", func() {
 			Expect(dig).To(Equal(mockDigest))
 		})
 	})
+	When("verifying TLS certificates", func() {
+		var tlsServer *ghttp.Server
+		BeforeEach(func() {
+			tlsServer = ghttp.NewTLSServer()
+		})
+		AfterEach(func() {
+			tlsServer.Close()
+		})
+		It("should fail with a certificate error when noTLSVerify=false", func() {
+			_, err := digest.GetDigest(tlsServer.URL(), "token", false)
+			Expect(err).To(HaveOccurred())
+		})
+		It("should succeed when noTLSVerify=true", func() {
+			tlsServer.AppendHandlers(
+				ghttp.RespondWith(http.StatusOK, "", http.Header{
+					digest.ContentDigestHeader: []string{mockDigest},
+				}),
+			)
+			dig, err := digest.GetDigest(tlsServer.URL(), "token", true)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dig).To(Equal(mockDigest))
+		})
+	})
 })
