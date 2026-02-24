@@ -51,6 +51,9 @@ var _ = Describe("Digests", func() {
 	mockImage := "ghcr.io/k6io/operator:latest"
 	mockCreated := time.Now()
 	mockDigest := "ghcr.io/k6io/operator@sha256:d68e1e532088964195ad3a0a71526bc2f11a78de0def85629beb75e2265f0547"
+	// mockBareDigest is a bare sha256 digest as returned by the Docker-Content-Digest header,
+	// distinct from the full image reference used in mockDigest.
+	mockBareDigest := "sha256:d68e1e532088964195ad3a0a71526bc2f11a78de0def85629beb75e2265f0547"
 
 	mockContainer := mocks.CreateMockContainerWithDigest(
 		mockId,
@@ -120,6 +123,34 @@ var _ = Describe("Digests", func() {
 			Expect(server.ReceivedRequests()).Should(HaveLen(1))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dig).To(Equal(mockDigest))
+		})
+	})
+	When("verifying TLS certificates", func() {
+		var tlsServer *ghttp.Server
+		BeforeEach(func() {
+			tlsServer = ghttp.NewTLSServer()
+		})
+		AfterEach(func() {
+			tlsServer.Close()
+		})
+		It("should fail with a certificate error when noTLSVerify=false", func() {
+			// No handler needed: the TLS handshake fails before any HTTP request is sent.
+			_, err := digest.GetDigest(tlsServer.URL(), "token", false)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("certificate"))
+		})
+		It("should succeed when noTLSVerify=true", func() {
+			tlsServer.AppendHandlers(
+				ghttp.CombineHandlers(
+					ghttp.VerifyRequest("HEAD", "/"),
+					ghttp.RespondWith(http.StatusOK, "", http.Header{
+						digest.ContentDigestHeader: []string{mockBareDigest},
+					}),
+				),
+			)
+			dig, err := digest.GetDigest(tlsServer.URL(), "token", true)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dig).To(Equal(mockBareDigest))
 		})
 	})
 })
