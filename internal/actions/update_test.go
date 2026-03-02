@@ -1,6 +1,7 @@
 package actions_test
 
 import (
+	"errors"
 	"time"
 
 	"github.com/apivzero/watchtower/internal/actions"
@@ -109,6 +110,36 @@ var _ = Describe("the update action", func() {
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(1))
 			})
 		})
+		When("a linked (non-stale) container fails ValidateCreateConfig", func() {
+			It("should not stop the linked container", func() {
+				// staleContainer has a new image; linkingContainer is non-stale but
+				// depends on it and therefore would be restarted by association.
+				// ValidateCreateConfig rejects the linked container before StopContainer
+				// is ever called. The container appears in Failed (the update could not
+				// proceed), but the error must be the pre-flight error, not the
+				// NameOfContainerToKeep tripwire — which would fire only if
+				// StopContainer were actually attempted.
+				data := getLinkedTestData(true)
+				client := CreateMockClient(data, false, false)
+				client.ValidateCreateConfigFn = func(c types.Container) error {
+					if c.Name() == "/test-container-02" {
+						return errors.New("container uses a MAC address per network, which requires Docker API 1.44 (daemon is 1.43)")
+					}
+					return nil
+				}
+				client.TestData.NameOfContainerToKeep = "/test-container-02"
+
+				report, err := actions.Update(client, types.UpdateParams{Cleanup: true})
+				Expect(err).NotTo(HaveOccurred())
+				// One failure: the linked container blocked by the pre-flight check.
+				Expect(report.Failed()).To(HaveLen(1))
+				// The error must be the ValidateCreateConfig message, not the tripwire
+				// "tried to stop the instance we want to keep" — proving StopContainer
+				// was never called.
+				Expect(report.Failed()[0].Error()).To(ContainSubstring("MAC address"))
+			})
+		})
+
 		When("updating a linked container with missing image info", func() {
 			It("should gracefully fail", func() {
 				client := CreateMockClient(getLinkedTestData(false), false, false)
@@ -255,6 +286,32 @@ var _ = Describe("the update action", func() {
 				})
 
 			})
+		})
+	})
+
+	When("ValidateCreateConfig rejects a container", func() {
+		It("should not stop the container", func() {
+			client := CreateMockClient(
+				&TestData{
+					NameOfContainerToKeep: "test-container-01",
+					Containers: []types.Container{
+						CreateMockContainer(
+							"test-container-01",
+							"test-container-01",
+							"fake-image:latest",
+							time.Now()),
+					},
+				},
+				false,
+				false,
+			)
+			client.ValidateCreateConfigError = errors.New("container uses a MAC address per network, which requires Docker API 1.44 (daemon is 1.43)")
+
+			report, err := actions.Update(client, types.UpdateParams{})
+			Expect(err).NotTo(HaveOccurred())
+			// Container is skipped (not failed), so it stays alive and update count is zero
+			Expect(report.Updated()).To(BeEmpty())
+			Expect(report.Failed()).To(BeEmpty())
 		})
 	})
 

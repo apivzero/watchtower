@@ -47,6 +47,12 @@ func Update(client container.Client, params types.UpdateParams) (types.Report, e
 					log.Tracef("Image config: %#v", imageInfo.Config)
 				}
 			}
+			// Validate daemon compatibility before stopping: if the container
+			// cannot be recreated on this daemon, skip it now rather than
+			// stopping it and leaving it dead.
+			if err == nil {
+				err = client.ValidateCreateConfig(targetContainer)
+			}
 		}
 
 		if err != nil {
@@ -148,6 +154,9 @@ func stopStaleContainer(container types.Container, client container.Client, para
 	// Perform an additional check here to prevent us from stopping a linked container we cannot restart
 	if container.IsLinkedToRestarting() {
 		if err := container.VerifyConfiguration(); err != nil {
+			return err
+		}
+		if err := client.ValidateCreateConfig(container); err != nil {
 			return err
 		}
 	}

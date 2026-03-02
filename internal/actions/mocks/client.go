@@ -13,6 +13,12 @@ type MockClient struct {
 	TestData      *TestData
 	pullImages    bool
 	removeVolumes bool
+	// ValidateCreateConfigError is returned for every container unless
+	// ValidateCreateConfigFn is set.
+	ValidateCreateConfigError error
+	// ValidateCreateConfigFn overrides ValidateCreateConfigError when set.
+	// It receives the container and returns an error if recreation is unsafe.
+	ValidateCreateConfigFn func(t.Container) error
 }
 
 // TestData is the data used to perform the test
@@ -31,9 +37,9 @@ func (testdata *TestData) TriedToRemoveImage() bool {
 // CreateMockClient creates a mock watchtower Client for usage in tests
 func CreateMockClient(data *TestData, pullImages bool, removeVolumes bool) MockClient {
 	return MockClient{
-		data,
-		pullImages,
-		removeVolumes,
+		TestData:      data,
+		pullImages:    pullImages,
+		removeVolumes: removeVolumes,
 	}
 }
 
@@ -97,4 +103,13 @@ func (client MockClient) IsContainerStale(cont t.Container, params t.UpdateParam
 // WarnOnHeadPullFailed is always true for the mock client
 func (client MockClient) WarnOnHeadPullFailed(_ t.Container) bool {
 	return true
+}
+
+// ValidateCreateConfig returns ValidateCreateConfigError, or delegates to
+// ValidateCreateConfigFn when it is set.
+func (client MockClient) ValidateCreateConfig(c t.Container) error {
+	if client.ValidateCreateConfigFn != nil {
+		return client.ValidateCreateConfigFn(c)
+	}
+	return client.ValidateCreateConfigError
 }
