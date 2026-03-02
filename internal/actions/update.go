@@ -156,6 +156,9 @@ func stopStaleContainer(container types.Container, client container.Client, para
 		if err := container.VerifyConfiguration(); err != nil {
 			return err
 		}
+		if err := client.ValidateCreateConfig(container); err != nil {
+			return err
+		}
 	}
 
 	if params.LifecycleHooks {

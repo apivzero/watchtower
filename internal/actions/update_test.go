@@ -110,6 +110,33 @@ var _ = Describe("the update action", func() {
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(1))
 			})
 		})
+		When("a linked (non-stale) container fails ValidateCreateConfig", func() {
+			It("should not stop the linked container", func() {
+				// staleContainer has a new image; linkingContainer is non-stale but
+				// depends on it and therefore would be restarted by association.
+				// If ValidateCreateConfig rejects the linked container, it must not
+				// be stopped — the linked path in stopStaleContainer must respect
+				// the same pre-flight guard as the main staleness loop.
+				data := getLinkedTestData(true)
+				client := CreateMockClient(data, false, false)
+				client.ValidateCreateConfigFn = func(c t.Container) error {
+					if c.Name() == "/test-container-02" {
+						return errors.New("container uses a MAC address per network, which requires Docker API 1.44 (daemon is 1.43)")
+					}
+					return nil
+				}
+				client.TestData.NameOfContainerToKeep = "/test-container-02"
+
+				report, err := actions.Update(client, types.UpdateParams{Cleanup: true})
+				Expect(err).NotTo(HaveOccurred())
+				// The stale container (test-container-01) should still be updated.
+				// The linked container (test-container-02) must not be stopped
+				// (NameOfContainerToKeep would cause StopContainer to return an
+				// error if it were attempted, surfacing as a Failed entry).
+				Expect(report.Failed()).To(BeEmpty())
+			})
+		})
+
 		When("updating a linked container with missing image info", func() {
 			It("should gracefully fail", func() {
 				client := CreateMockClient(getLinkedTestData(false), false, false)

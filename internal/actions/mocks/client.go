@@ -10,10 +10,15 @@ import (
 
 // MockClient is a mock that passes as a watchtower Client
 type MockClient struct {
-	TestData                  *TestData
-	pullImages                bool
-	removeVolumes             bool
+	TestData      *TestData
+	pullImages    bool
+	removeVolumes bool
+	// ValidateCreateConfigError is returned for every container unless
+	// ValidateCreateConfigFn is set.
 	ValidateCreateConfigError error
+	// ValidateCreateConfigFn overrides ValidateCreateConfigError when set.
+	// It receives the container and returns an error if recreation is unsafe.
+	ValidateCreateConfigFn func(t.Container) error
 }
 
 // TestData is the data used to perform the test
@@ -100,7 +105,11 @@ func (client MockClient) WarnOnHeadPullFailed(_ t.Container) bool {
 	return true
 }
 
-// ValidateCreateConfig returns ValidateCreateConfigError if set, otherwise nil
-func (client MockClient) ValidateCreateConfig(_ t.Container) error {
+// ValidateCreateConfig returns ValidateCreateConfigError, or delegates to
+// ValidateCreateConfigFn when it is set.
+func (client MockClient) ValidateCreateConfig(c t.Container) error {
+	if client.ValidateCreateConfigFn != nil {
+		return client.ValidateCreateConfigFn(c)
+	}
 	return client.ValidateCreateConfigError
 }
