@@ -21,7 +21,7 @@ archives:
       {{- if eq .Arch "arm" }}armhf
       {{- else if eq .Arch "arm64" }}arm64v8
       {{- else }}{{ .Arch }}{{ end }}
-    format: tar.gz
+    formats: [tar.gz]
     files:
       - LICENSE.md
 
