@@ -17,6 +17,8 @@ func TestDaemonAPIVersionAtLeast(t *testing.T) {
 		{"1.10", "1.9", true},
 		{"2.0", "1.44", true},
 		{"1.44", "2.0", false},
+		{"10.0", "2.0", true},  // multi-digit major: numeric, not lexicographic
+		{"2.0", "10.0", false}, // would be wrong if compared as strings
 	}
 	for _, tc := range cases {
 		got := daemonAPIVersionAtLeast(tc.have, tc.required)

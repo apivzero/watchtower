@@ -272,6 +272,9 @@ func (client dockerClient) ValidateCreateConfig(c t.Container) error {
 	}
 	networks := c.ContainerInfo().NetworkSettings.Networks
 	for name, ep := range networks {
+		if ep == nil {
+			continue
+		}
 		if ep.MacAddress != "" && !daemonAPIVersionAtLeast(client.api.ClientVersion(), "1.44") {
 			return fmt.Errorf(
 				"container uses a MAC address on network %q, which requires Docker API 1.44 (daemon is %s); "+
@@ -292,7 +295,12 @@ func daemonAPIVersionAtLeast(have, required string) bool {
 		return have >= required
 	}
 	if haveParts[0] != reqParts[0] {
-		return haveParts[0] > reqParts[0]
+		haveMajor, hErr := strconv.Atoi(haveParts[0])
+		reqMajor, rErr := strconv.Atoi(reqParts[0])
+		if hErr != nil || rErr != nil {
+			return have >= required
+		}
+		return haveMajor > reqMajor
 	}
 	// Same major — compare minor numerically to handle e.g. "1.9" vs "1.10"
 	haveMinor, hErr := strconv.Atoi(haveParts[1])

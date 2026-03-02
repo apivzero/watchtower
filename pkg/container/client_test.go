@@ -345,6 +345,16 @@ var _ = Describe("the client", func() {
 				Expect(c.ValidateCreateConfig(MockContainer())).To(Succeed())
 			})
 		})
+		When("the container has a nil endpoint entry in the network map", func() {
+			It("should return nil without panicking", func() {
+				docker143, _ := cli.NewClientWithOpts(cli.WithVersion("1.43"))
+				c := dockerClient{api: docker143}
+				container := MockContainer(WithNetworkSettings(map[string]*network.EndpointSettings{
+					"bridge": nil,
+				}))
+				Expect(c.ValidateCreateConfig(container)).To(Succeed())
+			})
+		})
 		When("the container has network endpoints with no MAC addresses", func() {
 			It("should return nil regardless of daemon version", func() {
 				docker143, _ := cli.NewClientWithOpts(cli.WithVersion("1.43"))
