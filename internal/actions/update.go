@@ -77,9 +77,27 @@ func Update(client container.Client, params types.UpdateParams) (types.Report, e
 
 	UpdateImplicitRestart(containers)
 
+	// Pre-flight checks for linked (non-stale) containers: run the same
+	// configuration validation used for directly-stale containers so that a
+	// container we cannot recreate is reported as Skipped rather than Failed.
+	for i, c := range containers {
+		if !c.IsLinkedToRestarting() {
+			continue
+		}
+		var preflightErr error
+		if preflightErr = c.VerifyConfiguration(); preflightErr == nil {
+			preflightErr = client.ValidateCreateConfig(c)
+		}
+		if preflightErr != nil {
+			log.Infof("Unable to update linked container %q: %v. Proceeding to next.", c.Name(), preflightErr)
+			progress.AddSkipped(c, preflightErr)
+			containers[i].SetLinkedToRestarting(false)
+		}
+	}
+
 	var containersToUpdate []types.Container
 	for _, c := range containers {
-		if !c.IsMonitorOnly(params) {
+		if !c.IsMonitorOnly(params) && c.ToRestart() {
 			containersToUpdate = append(containersToUpdate, c)
 			progress.MarkForUpdate(c.ID())
 		}
@@ -149,16 +167,6 @@ func stopStaleContainer(container types.Container, client container.Client, para
 
 	if !container.ToRestart() {
 		return nil
-	}
-
-	// Perform an additional check here to prevent us from stopping a linked container we cannot restart
-	if container.IsLinkedToRestarting() {
-		if err := container.VerifyConfiguration(); err != nil {
-			return err
-		}
-		if err := client.ValidateCreateConfig(container); err != nil {
-			return err
-		}
 	}
 
 	if params.LifecycleHooks {
