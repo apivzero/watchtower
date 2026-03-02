@@ -267,6 +267,9 @@ func (client dockerClient) GetNetworkConfig(c t.Container) *network.NetworkingCo
 // field is rejected even though ContainerInspect returns it, causing
 // Watchtower to stop a container it can never restart.
 func (client dockerClient) ValidateCreateConfig(c t.Container) error {
+	if c.ContainerInfo().NetworkSettings == nil {
+		return nil
+	}
 	networks := c.ContainerInfo().NetworkSettings.Networks
 	for name, ep := range networks {
 		if ep.MacAddress != "" && !daemonAPIVersionAtLeast(client.api.ClientVersion(), "1.44") {

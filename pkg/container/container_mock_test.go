@@ -3,6 +3,7 @@ package container
 import (
 	"github.com/docker/docker/api/types"
 	dockerContainer "github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 )
 
@@ -75,5 +76,13 @@ func WithHealthcheck(healthConfig dockerContainer.HealthConfig) MockContainerUpd
 func WithImageHealthcheck(healthConfig dockerContainer.HealthConfig) MockContainerUpdate {
 	return func(cnt *types.ContainerJSON, img *types.ImageInspect) {
 		img.Config.Healthcheck = &healthConfig
+	}
+}
+
+func WithNetworkSettings(networks map[string]*network.EndpointSettings) MockContainerUpdate {
+	return func(cnt *types.ContainerJSON, _ *types.ImageInspect) {
+		cnt.NetworkSettings = &types.NetworkSettings{
+			Networks: networks,
+		}
 	}
 }

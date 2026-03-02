@@ -336,6 +336,51 @@ var _ = Describe("the client", func() {
 			})
 		})
 	})
+	Describe(`ValidateCreateConfig`, func() {
+		When("the container has no NetworkSettings", func() {
+			It("should return nil", func() {
+				docker143, _ := cli.NewClientWithOpts(cli.WithVersion("1.43"))
+				c := dockerClient{api: docker143}
+				// MockContainer does not set NetworkSettings; nil must not panic
+				Expect(c.ValidateCreateConfig(MockContainer())).To(Succeed())
+			})
+		})
+		When("the container has network endpoints with no MAC addresses", func() {
+			It("should return nil regardless of daemon version", func() {
+				docker143, _ := cli.NewClientWithOpts(cli.WithVersion("1.43"))
+				c := dockerClient{api: docker143}
+				container := MockContainer(WithNetworkSettings(map[string]*network.EndpointSettings{
+					"bridge": {MacAddress: ""},
+				}))
+				Expect(c.ValidateCreateConfig(container)).To(Succeed())
+			})
+		})
+		When("the container has a per-network MAC address", func() {
+			When("the daemon API version is below 1.44", func() {
+				It("should return an error naming the network and the daemon version", func() {
+					docker143, _ := cli.NewClientWithOpts(cli.WithVersion("1.43"))
+					c := dockerClient{api: docker143}
+					container := MockContainer(WithNetworkSettings(map[string]*network.EndpointSettings{
+						"macvlan0": {MacAddress: "02:42:ac:11:00:02"},
+					}))
+					err := c.ValidateCreateConfig(container)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("macvlan0"))
+					Expect(err.Error()).To(ContainSubstring("1.43"))
+				})
+			})
+			When("the daemon API version is 1.44 or above", func() {
+				It("should return nil", func() {
+					docker144, _ := cli.NewClientWithOpts(cli.WithVersion("1.44"))
+					c := dockerClient{api: docker144}
+					container := MockContainer(WithNetworkSettings(map[string]*network.EndpointSettings{
+						"macvlan0": {MacAddress: "02:42:ac:11:00:02"},
+					}))
+					Expect(c.ValidateCreateConfig(container)).To(Succeed())
+				})
+			})
+		})
+	})
 	Describe(`NewClient`, func() {
 		It(`should create a valid client with API version negotiation`, func() {
 			client := NewClient(ClientOptions{})
