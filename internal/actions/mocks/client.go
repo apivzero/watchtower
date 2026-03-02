@@ -37,9 +37,9 @@ func (testdata *TestData) TriedToRemoveImage() bool {
 // CreateMockClient creates a mock watchtower Client for usage in tests
 func CreateMockClient(data *TestData, pullImages bool, removeVolumes bool) MockClient {
 	return MockClient{
-		data,
-		pullImages,
-		removeVolumes,
+		TestData:      data,
+		pullImages:    pullImages,
+		removeVolumes: removeVolumes,
 	}
 }
 
