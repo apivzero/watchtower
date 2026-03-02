@@ -119,7 +119,7 @@ var _ = Describe("the update action", func() {
 				// the same pre-flight guard as the main staleness loop.
 				data := getLinkedTestData(true)
 				client := CreateMockClient(data, false, false)
-				client.ValidateCreateConfigFn = func(c t.Container) error {
+				client.ValidateCreateConfigFn = func(c types.Container) error {
 					if c.Name() == "/test-container-02" {
 						return errors.New("container uses a MAC address per network, which requires Docker API 1.44 (daemon is 1.43)")
 					}
