@@ -115,9 +115,9 @@ var _ = Describe("the update action", func() {
 				// staleContainer has a new image; linkingContainer is non-stale but
 				// depends on it and therefore would be restarted by association.
 				// ValidateCreateConfig rejects the linked container before StopContainer
-				// is ever called. The container appears in Failed (the update could not
-				// proceed), but the error must be the pre-flight error, not the
-				// NameOfContainerToKeep tripwire — which would fire only if
+				// is ever called. The container appears in Skipped (matching the
+				// directly-stale path), and the error must be the pre-flight error,
+				// not the NameOfContainerToKeep tripwire — which would fire only if
 				// StopContainer were actually attempted.
 				data := getLinkedTestData(true)
 				client := CreateMockClient(data, false, false)
@@ -131,25 +131,26 @@ var _ = Describe("the update action", func() {
 
 				report, err := actions.Update(client, types.UpdateParams{Cleanup: true})
 				Expect(err).NotTo(HaveOccurred())
-				// One failure: the linked container blocked by the pre-flight check.
-				Expect(report.Failed()).To(HaveLen(1))
+				// The linked container was blocked before stop: it should appear as
+				// Skipped (not Failed), matching the directly-stale pre-flight path.
+				Expect(report.Skipped()).To(HaveLen(1))
 				// The error must be the ValidateCreateConfig message, not the tripwire
 				// "tried to stop the instance we want to keep" — proving StopContainer
 				// was never called.
-				Expect(report.Failed()[0].Error()).To(ContainSubstring("MAC address"))
+				Expect(report.Skipped()[0].Error()).To(ContainSubstring("MAC address"))
 			})
 		})
 
 		When("updating a linked container with missing image info", func() {
-			It("should gracefully fail", func() {
+			It("should gracefully skip the linked container", func() {
 				client := CreateMockClient(getLinkedTestData(false), false, false)
 
 				report, err := actions.Update(client, types.UpdateParams{})
 				Expect(err).NotTo(HaveOccurred())
-				// Note: Linked containers that were skipped for recreation is not counted in Failed
-				// If this happens, an error is emitted to the logs, so a notification should still be sent.
+				// The directly-stale container is updated; the linked container with
+				// missing image info is skipped (not failed) before the stop phase.
 				Expect(report.Updated()).To(HaveLen(1))
-				Expect(report.Fresh()).To(HaveLen(1))
+				Expect(report.Skipped()).To(HaveLen(1))
 			})
 		})
 	})
