@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
@@ -37,6 +38,12 @@ type Client interface {
 	ExecuteCommand(containerID t.ContainerID, command string, timeout int) (SkipUpdate bool, err error)
 	RemoveImageByID(t.ImageID) error
 	WarnOnHeadPullFailed(container t.Container) bool
+	// ValidateCreateConfig checks whether the container's configuration is
+	// compatible with the current Docker daemon for recreation. Returns an
+	// error if the container cannot be recreated (e.g. per-network MAC
+	// addresses require API 1.44). This must be called before stopping the
+	// container so that an incompatible container is never left dead.
+	ValidateCreateConfig(t.Container) error
 }
 
 // NewClient returns a new Client instance which can be used to interact with
@@ -250,6 +257,47 @@ func (client dockerClient) GetNetworkConfig(c t.Container) *network.NetworkingCo
 		ep.Aliases = aliases
 	}
 	return config
+}
+
+// ValidateCreateConfig checks whether the container's network configuration
+// is compatible with the Docker daemon that will be asked to recreate it.
+//
+// Docker API 1.44 introduced per-network MAC address specification via
+// EndpointSettings.MacAddress (used in NetworkConnect). On older daemons the
+// field is rejected even though ContainerInspect returns it, causing
+// Watchtower to stop a container it can never restart.
+func (client dockerClient) ValidateCreateConfig(c t.Container) error {
+	networks := c.ContainerInfo().NetworkSettings.Networks
+	for name, ep := range networks {
+		if ep.MacAddress != "" && !daemonAPIVersionAtLeast(client.api.ClientVersion(), "1.44") {
+			return fmt.Errorf(
+				"container uses a MAC address on network %q, which requires Docker API 1.44 (daemon is %s); "+
+					"upgrade the Docker daemon or remove the MAC address assignment to allow updates",
+				name, client.api.ClientVersion(),
+			)
+		}
+	}
+	return nil
+}
+
+// daemonAPIVersionAtLeast reports whether the negotiated daemon API version
+// is at least the required version. Both strings are in "MAJOR.MINOR" form.
+func daemonAPIVersionAtLeast(have, required string) bool {
+	haveParts := strings.SplitN(have, ".", 2)
+	reqParts := strings.SplitN(required, ".", 2)
+	if len(haveParts) != 2 || len(reqParts) != 2 {
+		return have >= required
+	}
+	if haveParts[0] != reqParts[0] {
+		return haveParts[0] > reqParts[0]
+	}
+	// Same major — compare minor numerically to handle e.g. "1.9" vs "1.10"
+	haveMinor, hErr := strconv.Atoi(haveParts[1])
+	reqMinor, rErr := strconv.Atoi(reqParts[1])
+	if hErr != nil || rErr != nil {
+		return have >= required
+	}
+	return haveMinor >= reqMinor
 }
 
 func (client dockerClient) StartContainer(c t.Container) (t.ContainerID, error) {

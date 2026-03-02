@@ -1,6 +1,7 @@
 package actions_test
 
 import (
+	"errors"
 	"time"
 
 	"github.com/apivzero/watchtower/internal/actions"
@@ -255,6 +256,32 @@ var _ = Describe("the update action", func() {
 				})
 
 			})
+		})
+	})
+
+	When("ValidateCreateConfig rejects a container", func() {
+		It("should not stop the container", func() {
+			client := CreateMockClient(
+				&TestData{
+					NameOfContainerToKeep: "test-container-01",
+					Containers: []types.Container{
+						CreateMockContainer(
+							"test-container-01",
+							"test-container-01",
+							"fake-image:latest",
+							time.Now()),
+					},
+				},
+				false,
+				false,
+			)
+			client.ValidateCreateConfigError = errors.New("container uses a MAC address per network, which requires Docker API 1.44 (daemon is 1.43)")
+
+			report, err := actions.Update(client, types.UpdateParams{})
+			Expect(err).NotTo(HaveOccurred())
+			// Container is skipped (not failed), so it stays alive and update count is zero
+			Expect(report.Updated()).To(BeEmpty())
+			Expect(report.Failed()).To(BeEmpty())
 		})
 	})
 
